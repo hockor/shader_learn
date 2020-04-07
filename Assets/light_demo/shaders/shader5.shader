@@ -1,6 +1,7 @@
-﻿// 漫反射 demo （逐顶点光照）
-
-Shader "light_demo/m1"
+﻿
+// 高光反射 demo 
+//  specular = 直射光 * pow(cosα，高光的系数x) α是反射光方向和视野方向的夹角
+Shader "light_demo/m5"
 {
 
     Properties {
@@ -12,7 +13,7 @@ Shader "light_demo/m1"
         Pass {
             Tags {"LightMode"="ForwardBase"}
             CGPROGRAM
-            
+            #include "UnityCG.cginc"
             #include "Lighting.cginc"
 
             // 顶点函数，作用是完成顶点坐标从模型空间到裁剪空间的转换（从游戏环境转换到屏幕环境） 
@@ -29,6 +30,7 @@ Shader "light_demo/m1"
             };
 
             struct v2f {
+                float3 normal:NORMAL; 
                 float4 pos:SV_POSITION;
                 fixed3 color:COLOR;
             };
@@ -38,9 +40,10 @@ Shader "light_demo/m1"
                 v2f o;
                 // 让模型顶点数据坐标从本地坐标转化为屏幕剪裁坐标  
                 o.pos = UnityObjectToClipPos(v.vertex);
-
+                
+                
                 // 获取环境光，
-                fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz;
+                fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.rgb;
 
                 // 计算世界法线方向
                 fixed3 worldNormal = UnityObjectToWorldNormal(v.normal);
@@ -49,12 +52,18 @@ Shader "light_demo/m1"
 
                 // 计算漫反色  和传入的颜色进行融合
                 fixed3 diffuse = _LightColor0.rgb *_Diffuse.rgb * saturate(dot(worldNormal, worldLight));
-                // 返回环境光和漫反射光的相加
-                o.color = ambient + diffuse;
+
+                // 计算高光
+                fixed3 reflectDir = normalize(reflect(-worldLight,worldNormal));
+                fixed3 viewDir = normalize(_WorldSpaceCameraPos.xyz - mul(v.vertex,unity_WorldToObject).xyz);
+                fixed3 specular = _LightColor0.rgb * pow(max(dot(reflectDir,viewDir),0),40);
+
+                o.color = ambient + diffuse + specular;
                 return o;
             }
             
             fixed4 frag(v2f f):SV_TARGET {
+                
                 return fixed4(f.color,1);
             }
             ENDCG

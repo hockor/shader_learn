@@ -1,6 +1,6 @@
 ﻿// 漫反射 demo （逐顶点光照）
 
-Shader "light_demo/m1"
+Shader "light_demo/m4"
 {
 
     Properties {
@@ -29,6 +29,7 @@ Shader "light_demo/m1"
             };
 
             struct v2f {
+                float3 normal:NORMAL; 
                 float4 pos:SV_POSITION;
                 fixed3 color:COLOR;
             };
@@ -38,24 +39,25 @@ Shader "light_demo/m1"
                 v2f o;
                 // 让模型顶点数据坐标从本地坐标转化为屏幕剪裁坐标  
                 o.pos = UnityObjectToClipPos(v.vertex);
-
+                o.normal = v.normal;
+                // 返回环境光和漫反射光的相加
+                
+                return o;
+            }
+            
+            fixed4 frag(v2f f):SV_TARGET {
                 // 获取环境光，
                 fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz;
 
                 // 计算世界法线方向
-                fixed3 worldNormal = UnityObjectToWorldNormal(v.normal);
+                fixed3 worldNormal = UnityObjectToWorldNormal(f.normal);
                 // 计算灯光方向  
                 fixed3 worldLight = normalize(_WorldSpaceLightPos0.xyz);
 
                 // 计算漫反色  和传入的颜色进行融合
                 fixed3 diffuse = _LightColor0.rgb *_Diffuse.rgb * saturate(dot(worldNormal, worldLight));
-                // 返回环境光和漫反射光的相加
-                o.color = ambient + diffuse;
-                return o;
-            }
-            
-            fixed4 frag(v2f f):SV_TARGET {
-                return fixed4(f.color,1);
+                fixed3 tempColor = ambient + diffuse;
+                return fixed4(tempColor,1);
             }
             ENDCG
         }

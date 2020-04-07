@@ -33,7 +33,7 @@ Shader "light_demo/m3"
             v2f vertex(a2v v) {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                // 直接将法线变量作为颜色值，让 unity 自己做插值运算，就行程了那个渐变的感觉
+                // 直接将法线变量作为颜色值，让 unity 自己做插值运算，就形成了那个渐变的感觉
                 o.temp = v.normal;
                 return o;
             }
