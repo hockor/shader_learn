@@ -1,17 +1,23 @@
-﻿
-Shader "texture_demo/m2"
+﻿// 透明度测试
+Shader "texture_demo/m4"
 {
 
     Properties {
-
         _MainTex("texture",2D)="white"{}
         _Gloss("gloss size",Range(2,40)) = 10
         _SpecularColor("specular color",COLOR)=(1,1,1,1)
+        _Trans("transparent range",Range(0,1))=0.5
     }
     SubShader 
     {
+        // 设置渲染队列为透明度 （AlphaTest和 Transparent 都行？ 这两个有啥区别啊）
+        // AlphaTest:2450  Transparent:3000 渲染顺序不同 数字越大的物体，其渲染顺序就越靠后，就会遮住数字小的物体。
+        Tags{"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
+
         Pass {
             Tags {"LightMode"="ForwardBase"}
+            Zwrite  off  //关闭深度写入
+            Blend SrcAlpha OneMinusSrcAlpha 
             CGPROGRAM
             
             #include "Lighting.cginc"
@@ -24,8 +30,11 @@ Shader "texture_demo/m2"
             
             half _Gloss;
             fixed4 _SpecularColor;
+            float _Trans;
             fixed4 _Color;
             sampler2D _MainTex;
+            // 获取 uv 里面的 offset 和 tiling, 固定写法，前面是你的 UV 名，后面加上 _ST
+            float4 _MainTex_ST;
 
             struct a2v {
                 float4 vertex:POSITION; // 告诉 unity 把模型空间下的顶点坐标给 vertex
@@ -38,7 +47,8 @@ Shader "texture_demo/m2"
                 float4 pos:SV_POSITION;
                 fixed3 color:COLOR;
                 fixed3 view:TEXCOORD;
-                float4 uv:TEXCOORD1;
+                // 这里需要改成 float2，下面都是 2 个分量相加的
+                float2 uv:TEXCOORD1;
             };
             
             
@@ -47,9 +57,10 @@ Shader "texture_demo/m2"
                 // 让模型顶点数据坐标从本地坐标转化为屏幕剪裁坐标  
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.normal = v.normal;
-                o.uv = v.texcoord;
+
+                //  加上 UV 中的 offset 和 tiling
+                o.uv = v.texcoord.xy *_MainTex_ST.xy  + _MainTex_ST.zw;
                 o.view = _WorldSpaceCameraPos.xyz - mul(v.vertex,unity_WorldToObject).xyz;
-               
                 return o;
             }
             
@@ -59,7 +70,8 @@ Shader "texture_demo/m2"
                 fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.rgb;
 
                 // 获取纹理坐标对应的颜色
-                float3 textureColor = tex2D(_MainTex,f.uv.xy);
+                float4 textureColor = tex2D(_MainTex,f.uv.xy);
+                
                 // 计算世界法线方向
                 fixed3 worldNormal = UnityObjectToWorldNormal(f.normal);
                 // 计算灯光方向  
@@ -74,7 +86,8 @@ Shader "texture_demo/m2"
                 fixed3 halfDir = normalize(viewDir + worldLight);
                 fixed3 specular = _SpecularColor * pow(max(dot(reflectDir,halfDir),0),_Gloss);
                 fixed3 tempColor = ambient + diffuse + specular;
-                return fixed4(tempColor,1);
+                // 把透明度叠进去
+                return fixed4(tempColor,_Trans);
             }
             ENDCG
         }

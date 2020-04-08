@@ -1,9 +1,7 @@
-﻿
-Shader "texture_demo/m3"
+﻿Shader "texture_demo/m3"
 {
 
     Properties {
-
         _MainTex("texture",2D)="white"{}
         _Gloss("gloss size",Range(2,40)) = 10
         _SpecularColor("specular color",COLOR)=(1,1,1,1)

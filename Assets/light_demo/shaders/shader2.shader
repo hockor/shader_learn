@@ -41,6 +41,7 @@ Shader "light_demo/m2"
                 // 获取环境光，
                 fixed3 ambient = UNITY_LIGHTMODEL_AMBIENT.xyz;
 
+                
                 // 计算世界法线方向
                 fixed3 worldNormal = UnityObjectToWorldNormal(v.normal);
                 // 计算灯光方向  
