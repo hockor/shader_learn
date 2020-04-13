@@ -11,12 +11,13 @@ Shader "texture_demo/m4"
     SubShader 
     {
         // 设置渲染队列为透明度 （AlphaTest和 Transparent 都行？ 这两个有啥区别啊）
-        // AlphaTest:2450  Transparent:3000 渲染顺序不同 数字越大的物体，其渲染顺序就越靠后，就会遮住数字小的物体。
-        Tags{"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
+        // AlphaTest:2450  Transparent:3000 渲染顺序不同
+        Tags{"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
         Pass {
             Tags {"LightMode"="ForwardBase"}
             Zwrite  off  //关闭深度写入
+            // 设置混合因子为源的透明度 (不加这个的话 alphaTest 不会透明。。)
             Blend SrcAlpha OneMinusSrcAlpha 
             CGPROGRAM
             
